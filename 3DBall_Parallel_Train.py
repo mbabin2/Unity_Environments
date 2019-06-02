@@ -86,7 +86,7 @@ if use_seed:
     torch.manual_seed(seed)
 
 # hyperparameters
-npop = 30 # population size
+npop = 6 # population size
 sigma = 0.1 # noise standard deviation
 alpha = 0.02 # learning rate
 
@@ -107,11 +107,13 @@ pool = tl.ThreadPool(npop)
 IDs = [i for i in range(npop)]
 ES_accuracies = []
 
-for i in range(501):
+for i in range(71):
     if i % 5 == 0:
         ES_accuracy = f_test(w)
         ES_accuracies.append(ES_accuracy)
-        print('iter %d, reward: %f' % (i, ES_accuracy))
+        #with open("TrainingScores/3DBall_Parallel_Train_Scores.dat", "a") as file:
+            #file.write('iter %d, reward: %r\r\n' % (i, ES_accuracy))
+        print('iter %d, reward: %r' % (i, ES_accuracy))
     R = np.zeros(npop)
     N = torch.randn(npop, w.size()[0])
     for j, d in enumerate(IDs):
@@ -122,6 +124,13 @@ for i in range(501):
     w = w + alpha/(npop*sigma) * torch.mm(torch.transpose(N, 0, 1), torch.from_numpy(A).view(npop,1).float()).view(w.size()[0])    
 
 print("Done!")
+
+plt.plot(ES_accuracies,label='EvoStrat')
+plt.ylabel('accuracy')
+plt.legend()
+plt.savefig("TrainingScores/3DBall_Parallel_Results.png")
+
+
 
 model = Model()
 model.parameters = utils.vector_to_parameters(w, model.parameters())

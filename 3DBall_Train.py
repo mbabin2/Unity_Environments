@@ -68,7 +68,7 @@ model = Model()
 ES_accuracies = []
 
 w = utils.parameters_to_vector(Model().parameters())
-for i in range(101):
+for i in range(61):
     ES_accuracy = f(w)
     ES_accuracies.append(ES_accuracy.item())
     if i % 20 == 0:
@@ -86,6 +86,7 @@ plt.plot(ES_accuracies,label='EvoStrat')
 plt.ylabel('accuracy')
 plt.legend()
 plt.show()
+
 
 model.parameters = utils.vector_to_parameters(w, model.parameters())
 torch.save(model.state_dict(), '3Dball_checkpoint.pth')

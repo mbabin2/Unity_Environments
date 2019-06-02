@@ -10,7 +10,6 @@ import threadlib as tl
 import numpy as np
 from mlagents.envs import UnityEnvironment
 from random import randrange
-from time import sleep
 
 def Model():
     model = nn.Sequential(OrderedDict([
@@ -50,12 +49,13 @@ def f(args):
             scores = np.add(scores, rewards) 
             if True in dones:
                 break
+    
+    model = Model()
+    model.parameters = utils.vector_to_parameters(w, model.parameters())
+    torch.save(model.state_dict(), 'TrainedWeights/Reacher_Parallel_checkpoint.pth')
+    
     R[index] = np.mean(scores)
-    
-def wait_delay(d):
-    print('sleeping for (%d)sec' % d)
-    sleep(d)
-    
+     
 def f_test(w):
     model = Model()
     model.parameters = utils.vector_to_parameters(w, model.parameters())
@@ -86,20 +86,20 @@ if use_seed:
     torch.manual_seed(seed)
 
 # hyperparameters
-npop = 30 # population size
+npop = 20 # population size
 sigma = 0.1 # noise standard deviation
 alpha = 0.02 # learning rate
 
 envs = []
 for i in range(npop):
-    env = UnityEnvironment(file_name="UnityEnvironments/3DBall/3DBall_Headless.exe", worker_id=i)
+    env = UnityEnvironment(file_name="UnityEnvironments/Reacher/Reacher_Headless.x86_64", worker_id=i)
     envs.append(env)
     brain_name = env.brain_names[0]
     brain = env.brains[brain_name]
     env_info = env.reset(train_mode=training_mode)[brain_name]
 
 input_size = len(env_info.vector_observations[0])
-hidden_size = [64,32]
+hidden_size = [128,64]
 output_size = brain.vector_action_space_size[0] 
     
 w = utils.parameters_to_vector(Model().parameters())
@@ -107,11 +107,11 @@ pool = tl.ThreadPool(npop)
 IDs = [i for i in range(npop)]
 ES_accuracies = []
 
-for i in range(501):
+for i in range(41):
     if i % 5 == 0:
         ES_accuracy = f_test(w)
         ES_accuracies.append(ES_accuracy)
-        print('iter %d, reward: %f' % (i, ES_accuracy))
+        print('iter %d, reward: %r' % (i, ES_accuracy))
     R = np.zeros(npop)
     N = torch.randn(npop, w.size()[0])
     for j, d in enumerate(IDs):
@@ -123,8 +123,10 @@ for i in range(501):
 
 print("Done!")
 
-model = Model()
-model.parameters = utils.vector_to_parameters(w, model.parameters())
-torch.save(model.state_dict(), 'Test_Parallel_checkpoint.pth')
+plt.plot(ES_accuracies,label='EvoStrat')
+plt.ylabel('accuracy')
+plt.legend()
+plt.savefig("TrainingScores/Reacher_Parallel_Results.png")
+
 for env in envs:
     env.close()
